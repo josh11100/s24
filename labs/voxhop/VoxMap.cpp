@@ -75,13 +75,13 @@ void VoxMap::parseMap(std::istream& stream) {
 
 bool VoxMap::isFilled(int x, int y, int z) const {
     if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return false;
+        return true;
     }
     return map[z][y][x];
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && isFilled(x, y, z - 1);
