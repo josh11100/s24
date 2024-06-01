@@ -96,11 +96,13 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int nx = point.x + dx;
         int ny = point.y + dy;
         int nz = point.z;
-        while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-            nz--;
-        }
-        if (isValidVoxel(nx, ny, nz)) {
-            neighbors.emplace_back(nx, ny, nz);
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
+                nz--;
+            }
+            if (isValidVoxel(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz);
+            }
         }
     }
     return neighbors;
