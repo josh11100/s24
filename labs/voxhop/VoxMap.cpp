@@ -84,7 +84,7 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
     if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
         return false;
     }
-    return !isFilled(x, y, z) && isFilled(x, y, z - 1);
+    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
@@ -96,6 +96,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int nx = point.x + dx;
         int ny = point.y + dy;
         int nz = point.z;
+
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
             while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
                 nz--;
