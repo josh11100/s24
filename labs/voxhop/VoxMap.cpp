@@ -39,16 +39,21 @@ void VoxMap::parseMap(std::istream& stream) {
     for (int z = 0; z < height; ++z) {
         std::getline(stream, line); // Skip the empty line
         if (!line.empty()) {
-            throw std::invalid_argument("Expected empty line between tiers");
+            throw std::invalid_argument("Expected empty line between tiers, found: " + line);
         }
         for (int y = 0; y < depth; ++y) {
-            if (!std::getline(stream, line) || line.length() != static_cast<size_t>(width / 4)) {
-                throw std::invalid_argument("Invalid line length in map file");
+            if (!std::getline(stream, line)) {
+                throw std::invalid_argument("Unexpected end of file while reading map data");
+            }
+            if (line.length() != static_cast<size_t>(width / 4)) {
+                std::ostringstream oss;
+                oss << "Invalid line length in map file: expected " << (width / 4) << " but found " << line.length();
+                throw std::invalid_argument(oss.str());
             }
             for (int x = 0; x < width / 4; ++x) {
                 char hexDigit = line[x];
                 if (!std::isxdigit(hexDigit)) {
-                    throw std::invalid_argument("Invalid character in map file");
+                    throw std::invalid_argument("Invalid character in map file: " + std::string(1, hexDigit));
                 }
                 int value = std::stoi(std::string(1, hexDigit), nullptr, 16);
                 std::bitset<4> bits(value);
@@ -59,6 +64,7 @@ void VoxMap::parseMap(std::istream& stream) {
         }
     }
 }
+
 
 bool VoxMap::isFilled(int x, int y, int z) const {
     return map[z][y][x];
