@@ -114,7 +114,7 @@ Route VoxMap::route(Point src, Point dst) {
         Point current = frontier.top().second;
         frontier.pop();
 
-        if (current.x == dst.x && current.y == dst.y && current.z == dst.z) {
+        if (current == dst) {
             Route path;
             Point step = current;
             while (step != src) {
