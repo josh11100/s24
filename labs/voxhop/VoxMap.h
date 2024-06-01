@@ -3,7 +3,9 @@
 
 #include <istream>
 #include <vector>
-#include <string>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "Point.h"
 #include "Route.h"
@@ -18,6 +20,8 @@ class VoxMap {
   void parseMap(std::istream& stream);
   bool isFilled(int x, int y, int z) const;
   bool isValidVoxel(int x, int y, int z) const;
+  std::vector<Point> getNeighbors(const Point& point) const;
+  int heuristic(const Point& a, const Point& b) const;
 
 public:
   VoxMap(std::istream& stream);
