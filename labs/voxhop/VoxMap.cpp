@@ -75,7 +75,7 @@ void VoxMap::parseMap(std::istream& stream) {
 
 bool VoxMap::isFilled(int x, int y, int z) const {
     if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return true;
+        return true; // Out of bounds is considered filled
     }
     return map[z][y][x];
 }
@@ -100,7 +100,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
                 nz--;
             }
-            if (nz >= 0 && isValidVoxel(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
         }
@@ -148,10 +148,6 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= depth || next.z < 0 || next.z >= height) {
-                continue;
-            }
-
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
