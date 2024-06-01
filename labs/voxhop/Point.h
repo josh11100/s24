@@ -16,6 +16,11 @@ struct Point {
     return x == other.x && y == other.y && z == other.z;
   }
 
+  // Inequality operator
+  bool operator!=(const Point& other) const {
+    return !(*this == other);
+  }
+
   // Less than operator
   bool operator<(const Point& other) const {
     if (x != other.x) return x < other.x;
