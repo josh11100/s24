@@ -100,7 +100,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
                 nz--;
             }
-            if (isValidVoxel(nx, ny, nz)) {
+            if (nz >= 0 && isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
         }
@@ -148,6 +148,10 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= depth || next.z < 0 || next.z >= height) {
+                continue;
+            }
+
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
