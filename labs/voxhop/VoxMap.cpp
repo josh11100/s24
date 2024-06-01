@@ -10,9 +10,9 @@
 #include <iostream>
 
 struct PointHash {
-  std::size_t operator()(const Point& point) const {
-    return std::hash<int>()(point.x) ^ std::hash<int>()(point.y) ^ std::hash<int>()(point.z);
-  }
+    std::size_t operator()(const Point& point) const {
+        return std::hash<int>()(point.x) ^ std::hash<int>()(point.y) ^ std::hash<int>()(point.z);
+    }
 };
 
 VoxMap::VoxMap(std::istream& stream) {
@@ -52,9 +52,6 @@ void VoxMap::parseMap(std::istream& stream) {
                 throw std::invalid_argument("Unexpected end of file while reading map data");
             }
 
-            // Logging the current line length for debugging purposes
-            std::cout << "Reading line: " << line << ", Length: " << line.length() << std::endl;
-
             if (line.length() != static_cast<size_t>(width / 4)) {
                 std::ostringstream oss;
                 oss << "Invalid line length in map file: expected " << (width / 4) << " but found " << line.length();
@@ -77,6 +74,9 @@ void VoxMap::parseMap(std::istream& stream) {
 }
 
 bool VoxMap::isFilled(int x, int y, int z) const {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+        return false;
+    }
     return map[z][y][x];
 }
 
