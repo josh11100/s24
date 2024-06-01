@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <iostream>
 
 struct PointHash {
   std::size_t operator()(const Point& point) const {
@@ -36,20 +37,30 @@ void VoxMap::parseMap(std::istream& stream) {
     map.resize(height, std::vector<std::vector<bool>>(depth, std::vector<bool>(width, false)));
 
     std::string line;
+    std::getline(stream, line); // Skip the newline character after dimensions
+
     for (int z = 0; z < height; ++z) {
-        std::getline(stream, line); // Skip the empty line
+        if (!std::getline(stream, line)) {
+            throw std::invalid_argument("Unexpected end of file while reading map data (missing empty line)");
+        }
         if (!line.empty()) {
             throw std::invalid_argument("Expected empty line between tiers, found: " + line);
         }
+
         for (int y = 0; y < depth; ++y) {
             if (!std::getline(stream, line)) {
                 throw std::invalid_argument("Unexpected end of file while reading map data");
             }
+
+            // Logging the current line length for debugging purposes
+            std::cout << "Reading line: " << line << ", Length: " << line.length() << std::endl;
+
             if (line.length() != static_cast<size_t>(width / 4)) {
                 std::ostringstream oss;
                 oss << "Invalid line length in map file: expected " << (width / 4) << " but found " << line.length();
                 throw std::invalid_argument(oss.str());
             }
+
             for (int x = 0; x < width / 4; ++x) {
                 char hexDigit = line[x];
                 if (!std::isxdigit(hexDigit)) {
@@ -64,7 +75,6 @@ void VoxMap::parseMap(std::istream& stream) {
         }
     }
 }
-
 
 bool VoxMap::isFilled(int x, int y, int z) const {
     return map[z][y][x];
