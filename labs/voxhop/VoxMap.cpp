@@ -75,7 +75,7 @@ void VoxMap::parseMap(std::istream& stream) {
 
 bool VoxMap::isFilled(int x, int y, int z) const {
     if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return false;
+        return true; // Out of bounds is considered filled
     }
     return map[z][y][x];
 }
@@ -148,7 +148,7 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            if (next.x < 0 || next.x >= width || next.y < 0 || next.y >= depth || next.z < 0 || next.z >= height) {
+            if (!isValidVoxel(next.x, next.y, next.z)) {
                 continue;
             }
 
