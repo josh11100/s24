@@ -188,5 +188,14 @@ Route VoxMap::route(Point src, Point dst) {
             }
 
             int newCost = costSoFar[current] + 1;
-   
+            if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
+                costSoFar[next] = newCost;
+                int priority = newCost + heuristic(next, dst);
+                frontier.emplace(priority, next);
+                cameFrom[next] = current;
+            }
+        }
+    }
 
+    throw NoRoute(src, dst);
+}
