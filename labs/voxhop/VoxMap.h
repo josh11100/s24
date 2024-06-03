@@ -28,6 +28,7 @@ public:
   ~VoxMap();
 
   Route route(Point src, Point dst);
+  bool isValidPoint(const Point& point) const;
 };
 
 #endif

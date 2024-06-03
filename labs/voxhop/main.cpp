@@ -24,10 +24,10 @@ int main(int argc, char** argv) {
   while (std::cin >> src >> dst) {
     try {
       // Check if the source and destination points are valid before finding a route
-      if (!map.isValidVoxel(src.x, src.y, src.z)) {
+      if (!map.isValidPoint(src)) {
         throw InvalidPoint(src);
       }
-      if (!map.isValidVoxel(dst.x, dst.y, dst.z)) {
+      if (!map.isValidPoint(dst)) {
         throw InvalidPoint(dst);
       }
       Route route = map.route(src, dst);
