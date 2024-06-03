@@ -106,7 +106,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
                     nz--;
                 }
             }
-            if (isValidVoxel(nx, ny, nz)) {
+            if (nz >= 0 && nz < height && isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
         }
