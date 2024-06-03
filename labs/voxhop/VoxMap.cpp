@@ -100,6 +100,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Ensure the voxel below is filled if we are not on the ground level
             while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
                 nz--;
             }
