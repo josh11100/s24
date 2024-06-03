@@ -154,10 +154,12 @@ Route VoxMap::route(Point src, Point dst) {
                     case Move::SOUTH: pos.y -= 1; break;
                     case Move::WEST: pos.x -= 1; break;
                 }
-                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || !isValidVoxel(pos.x, pos.y, pos.z)) {
+                // Check boundaries
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || pos.z < 0 || pos.z >= height) {
                     throw NoRoute(src, dst);
                 }
-                if (pos.z < 0 || pos.z >= height) { // Ensure we're not moving out of height bounds
+                // Check if the voxel below is filled to avoid climbing into space
+                if (!isFilled(pos.x, pos.y, pos.z - 1)) {
                     throw NoRoute(src, dst);
                 }
             }
