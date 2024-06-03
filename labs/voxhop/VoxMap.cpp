@@ -87,6 +87,7 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
+
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
     static const std::vector<std::pair<int, int>> directions = {
@@ -160,3 +161,4 @@ Route VoxMap::route(Point src, Point dst) {
 
     throw NoRoute(src, dst);
 }
+  
