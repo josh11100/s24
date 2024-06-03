@@ -159,7 +159,7 @@ Route VoxMap::route(Point src, Point dst) {
                     throw NoRoute(src, dst);
                 }
                 // Check if the voxel below is filled to avoid climbing into space
-                if (!isFilled(pos.x, pos.y, pos.z - 1)) {
+                if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
                     throw NoRoute(src, dst);
                 }
             }
