@@ -171,6 +171,11 @@ Route VoxMap::route(Point src, Point dst) {
                 if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
                     throw NoRoute(src, dst);
                 }
+
+                // Ensure that each move is valid and the path does not climb into unsupported space
+                if (!isFilled(pos.x, pos.y, pos.z) && (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1))) {
+                    throw NoRoute(src, dst);
+                }
             }
 
             // Ensure final position is the destination
