@@ -100,13 +100,11 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check for valid step and supporting voxel below
-            if (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-                while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-                    nz--;
-                }
+            // Ensure the voxel below is filled if we are not on the ground level
+            while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
+                nz--;
             }
-            if (nz >= 0 && nz < height && isValidVoxel(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
         }
@@ -114,6 +112,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
     return neighbors;
 }
+
 
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
@@ -170,11 +169,6 @@ Route VoxMap::route(Point src, Point dst) {
 
                 // Check if the voxel below is filled to avoid climbing into space
                 if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
-                    throw NoRoute(src, dst);
-                }
-
-                // Check if the current position is floating in space
-                if (!isFilled(pos.x, pos.y, pos.z) && (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1))) {
                     throw NoRoute(src, dst);
                 }
             }
