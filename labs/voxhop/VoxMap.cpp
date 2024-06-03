@@ -172,6 +172,11 @@ Route VoxMap::route(Point src, Point dst) {
                 if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
                     throw NoRoute(src, dst);
                 }
+
+                // Check if the current position is floating in space
+                if (!isFilled(pos.x, pos.y, pos.z) && (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1))) {
+                    throw NoRoute(src, dst);
+                }
             }
 
             // Ensure final position is the destination
