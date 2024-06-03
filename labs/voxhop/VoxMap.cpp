@@ -144,6 +144,31 @@ Route VoxMap::route(Point src, Point dst) {
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
+
+            // Validate the final path to ensure no movement off the map edges and no climbing into space
+            Point pos = src;
+            for (Move move : path) {
+                switch (move) {
+                    case Move::NORTH: pos.y += 1; break;
+                    case Move::EAST: pos.x += 1; break;
+                    case Move::SOUTH: pos.y -= 1; break;
+                    case Move::WEST: pos.x -= 1; break;
+                }
+                // Check boundaries
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || pos.z < 0 || pos.z >= height) {
+                    throw NoRoute(src, dst);
+                }
+                // Check if the voxel below is filled to avoid climbing into space
+                if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
+                    throw NoRoute(src, dst);
+                }
+            }
+
+            // Ensure final position is the destination
+            if (pos != dst) {
+                throw NoRoute(src, dst);
+            }
+
             return path;
         }
 
