@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
   Point dst;
   while (std::cin >> src >> dst) {
     try {
-      // Check if the source and destination points are valid before finding a route
       if (!map.isValidPoint(src)) {
         throw InvalidPoint(src);
       }
