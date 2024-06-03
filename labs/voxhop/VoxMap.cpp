@@ -87,7 +87,6 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
     static const std::vector<std::pair<int, int>> directions = {
@@ -149,6 +148,10 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            if (!isValidVoxel(next.x, next.y, next.z)) {
+                continue;
+            }
+
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
@@ -161,4 +164,3 @@ Route VoxMap::route(Point src, Point dst) {
 
     throw NoRoute(src, dst);
 }
-  
