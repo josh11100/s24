@@ -1,4 +1,3 @@
-
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -145,6 +144,21 @@ Route VoxMap::route(Point src, Point dst) {
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
+
+            // Validate the final path to ensure no movement off the map edges
+            Point pos = src;
+            for (Move move : path) {
+                switch (move) {
+                    case Move::NORTH: pos.y += 1; break;
+                    case Move::EAST: pos.x += 1; break;
+                    case Move::SOUTH: pos.y -= 1; break;
+                    case Move::WEST: pos.x -= 1; break;
+                }
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || !isValidVoxel(pos.x, pos.y, pos.z)) {
+                    throw NoRoute(src, dst);
+                }
+            }
+
             return path;
         }
 
