@@ -81,14 +81,10 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
-}
-
-bool VoxMap::isValidPoint(const Point& point) const {
-    return isValidVoxel(point.x, point.y, point.z);
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
@@ -96,28 +92,19 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     static const std::vector<std::pair<int, int>> directions = {
         {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
-
     for (const auto& [dx, dy] : directions) {
         int nx = point.x + dx;
         int ny = point.y + dy;
         int nz = point.z;
-
-        // Ensure we stay within boundaries
-        if (nx < 0 || nx >= width || ny < 0 || ny >= depth) {
-            continue;
-        }
-
-        // Handle vertical movements
-        while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-            nz--;
-        }
-
-        // Ensure the voxel is valid
-        if (nz >= 0 && isValidVoxel(nx, ny, nz)) {
-            neighbors.emplace_back(nx, ny, nz);
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
+                nz--;
+            }
+            if (nz >= 0 && isValidVoxel(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz);
+            }
         }
     }
-
     return neighbors;
 }
 
@@ -158,7 +145,7 @@ Route VoxMap::route(Point src, Point dst) {
             }
             std::reverse(path.begin(), path.end());
 
-            // Validate the final path
+            // Validate the final path to ensure no movement off the map edges and no climbing into space
             Point pos = src;
             for (Move move : path) {
                 switch (move) {

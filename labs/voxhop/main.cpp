@@ -23,10 +23,10 @@ int main(int argc, char** argv) {
   Point dst;
   while (std::cin >> src >> dst) {
     try {
-      if (!map.isValidPoint(src)) {
+      if (!map.isValidVoxel(src.x, src.y, src.z)) {
         throw InvalidPoint(src);
       }
-      if (!map.isValidPoint(dst)) {
+      if (!map.isValidVoxel(dst.x, dst.y, dst.z)) {
         throw InvalidPoint(dst);
       }
       Route route = map.route(src, dst);
