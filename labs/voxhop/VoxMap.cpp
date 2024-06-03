@@ -1,3 +1,4 @@
+
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -81,10 +82,10 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
-    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
+    return !isFilled(x, y, z) && isFilled(x, y, z - 1);
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
@@ -144,21 +145,6 @@ Route VoxMap::route(Point src, Point dst) {
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
-
-            // Validate the final path to ensure no movement off the map edges
-            Point pos = src;
-            for (Move move : path) {
-                switch (move) {
-                    case Move::NORTH: pos.y += 1; break;
-                    case Move::EAST: pos.x += 1; break;
-                    case Move::SOUTH: pos.y -= 1; break;
-                    case Move::WEST: pos.x -= 1; break;
-                }
-                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || !isValidVoxel(pos.x, pos.y, pos.z)) {
-                    throw NoRoute(src, dst);
-                }
-            }
-
             return path;
         }
 
