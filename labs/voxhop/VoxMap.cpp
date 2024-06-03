@@ -154,7 +154,7 @@ Route VoxMap::route(Point src, Point dst) {
                     case Move::SOUTH: pos.y -= 1; break;
                     case Move::WEST: pos.x -= 1; break;
                 }
-                if (!isValidVoxel(pos.x, pos.y, pos.z)) {
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || !isValidVoxel(pos.x, pos.y, pos.z)) {
                     throw NoRoute(src, dst);
                 }
             }
