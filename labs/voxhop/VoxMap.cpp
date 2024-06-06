@@ -93,8 +93,6 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
 
-    std::cout << "Current Point: (" << point.x << ", " << point.y << ", " << point.z << ")\n";
-
     for (const auto& [dx, dy] : directions) {
         int nx = point.x + dx;
         int ny = point.y + dy;
@@ -105,7 +103,6 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
-                std::cout << "Neighbor (horizontal): (" << nx << ", " << ny << ", " << nz << ")\n";
             }
 
             // Check if we can fall down
@@ -113,23 +110,19 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
                 downZ--;
             }
-            if (isValidVoxel(nx, ny, downZ)) {
+            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
                 neighbors.emplace_back(nx, ny, downZ);
-                std::cout << "Neighbor (fall down): (" << nx << ", " << ny << ", " << downZ << ")\n";
             }
 
             // Check if we can jump up
             if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
-                std::cout << "Neighbor (jump up): (" << nx << ", " << ny << ", " << (nz + 1) << ")\n";
             }
         }
     }
 
     return neighbors;
 }
-
-
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
     return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
@@ -195,11 +188,11 @@ Route VoxMap::route(Point src, Point dst) {
             }
 
             // Ensure final position is the destination
-            if (pos != dst) {
+            if (pos == dst) {
+                return path;
+            } else {
                 throw NoRoute(src, dst);
             }
-
-            return path;
         }
 
         for (const Point& next : getNeighbors(current)) {
