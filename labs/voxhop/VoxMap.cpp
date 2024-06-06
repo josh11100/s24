@@ -107,12 +107,16 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
+
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
+            }
         }
     }
 
     return neighbors;
 }
-
 
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
