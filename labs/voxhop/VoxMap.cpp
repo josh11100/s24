@@ -148,6 +148,8 @@ Route VoxMap::route(Point src, Point dst) {
         Point current = frontier.top().second;
         frontier.pop();
 
+        //std::cout << "Current: (" << current.x << ", " << current.y << ", " << current.z << ")\n";
+
         if (current == dst) {
             Route path;
             Point step = current;
@@ -155,8 +157,8 @@ Route VoxMap::route(Point src, Point dst) {
                 Point prev = cameFrom[step];
                 if (prev.x < step.x) path.push_back(Move::EAST);
                 else if (prev.x > step.x) path.push_back(Move::WEST);
-                else if (prev.y < step.y) path.push back(Move::SOUTH);
-                else if (prev.y > step.y) path.push back(Move::NORTH);
+                else if (prev.y < step.y) path.push_back(Move::SOUTH);
+                else if (prev.y > step.y) path.push_back(Move::NORTH);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
@@ -206,6 +208,7 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            //std::cout << "  Neighbor: (" << next.x << ", " << next.y << ", " << next.z << ")\n";
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
