@@ -7,7 +7,7 @@ class InvalidPoint {
   Point mPoint;
 public:
   InvalidPoint(Point point): mPoint(point) {}
-  const Point& point() const {return mPoint;}
+  const Point& point() const { return mPoint; }
 };
 
 class NoRoute {
@@ -15,8 +15,8 @@ class NoRoute {
   Point mDst;
 public:
   NoRoute(Point src, Point dst): mSrc(src), mDst(dst) {}
-  const Point& src() const {return mSrc;}
-  const Point& dst() const {return mDst;}
+  const Point& src() const { return mSrc; }
+  const Point& dst() const { return mDst; }
 };
 
-#endif
+#endif // ERRORS_H

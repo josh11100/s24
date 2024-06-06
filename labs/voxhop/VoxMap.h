@@ -31,4 +31,4 @@ public:
   bool isValidPoint(const Point& point) const;
 };
 
-#endif
+#endif // VOXMAP_H
