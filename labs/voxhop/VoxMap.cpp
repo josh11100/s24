@@ -156,6 +156,8 @@ Route VoxMap::route(Point src, Point dst) {
             Point pos = src;
             for (Move move : path) {
                 switch (move) {
+                    case Move::NORTH: pos.y += 1; break;
+                    case Move::EAST: pos.x += 1; break;
                     case Move::SOUTH: pos.y -= 1; break;
                     case Move::WEST: pos.x -= 1; break;
                 }
