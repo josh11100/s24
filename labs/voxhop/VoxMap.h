@@ -19,6 +19,7 @@ class VoxMap {
   // Helper Functions
   void parseMap(std::istream& stream);
   bool isFilled(int x, int y, int z) const;
+  bool isValidVoxel(int x, int y, int z) const;
   std::vector<Point> getNeighbors(const Point& point) const;
   int heuristic(const Point& a, const Point& b) const;
 
@@ -27,7 +28,7 @@ public:
   ~VoxMap();
 
   Route route(Point src, Point dst);
-  bool isValidVoxel(int x, int y, int z) const;
+  bool isValidPoint(const Point& point) const; // Add this function to the public interface
 };
 
 #endif // VOXMAP_H

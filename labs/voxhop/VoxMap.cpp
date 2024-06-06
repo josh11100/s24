@@ -1,4 +1,3 @@
-
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -9,6 +8,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <iostream>
+#include <fstream> // Include this header for ifstream
 
 struct PointHash {
     std::size_t operator()(const Point& point) const {
@@ -212,4 +212,55 @@ Route VoxMap::route(Point src, Point dst) {
     }
 
     throw NoRoute(src, dst);
+}
+
+bool VoxMap::isValidPoint(const Point& point) const {
+    return isValidVoxel(point.x, point.y, point.z);
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <map_file>" << std::endl;
+        return 1;
+    }
+
+    std::ifstream mapFile(argv[1]);
+    if (!mapFile) {
+        std::cerr << "Error: Unable to open map file: " << argv[1] << "\n";
+        return 1;
+    }
+
+    VoxMap voxMap(mapFile);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        std::istringstream iss(line);
+        Point src, dst;
+        iss >> src.x >> src.y >> src.z >> dst.x >> dst.y >> dst.z;
+
+        try {
+            if (!voxMap.isValidPoint(src)) {
+                throw InvalidPoint(src);
+            }
+            if (!voxMap.isValidPoint(dst)) {
+                throw InvalidPoint(dst);
+            }
+            Route route = voxMap.route(src, dst);
+            for (Move move : route) {
+                switch (move) {
+                    case Move::NORTH: std::cout << 'n'; break;
+                    case Move::EAST: std::cout << 'e'; break;
+                    case Move::SOUTH: std::cout << 's'; break;
+                    case Move::WEST: std::cout << 'w'; break;
+                }
+            }
+            std::cout << std::endl;
+        } catch (const InvalidPoint& ip) {
+            std::cout << "Invalid point: (" << ip.point().x << ", " << ip.point().y << ", " << ip.point().z << ")\n";
+        } catch (const NoRoute& nr) {
+            std::cout << "No route from (" << nr.src().x << ", " << nr.src().y << ", " << nr.src().z << ") to ("
+                      << nr.dst().x << ", " << nr.dst().y << ", " << nr.dst().z << ")\n";
+        }
+    }
+
+    return 0;
 }
