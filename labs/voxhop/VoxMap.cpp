@@ -100,12 +100,18 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Ensure the voxel below is filled if we are not on the ground level
-            while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-                nz--;
-            }
+            // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
+            }
+
+            // Check if we can fall down
+            int downZ = nz;
+            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+                downZ--;
+            }
+            if (isValidVoxel(nx, ny, downZ)) {
+                neighbors.emplace_back(nx, ny, downZ);
             }
 
             // Check if we can jump up
