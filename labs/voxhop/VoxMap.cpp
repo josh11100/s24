@@ -101,7 +101,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
             // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz) && (nz == 0 || !isFilled(nx, ny, nz - 1))) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -148,8 +148,6 @@ Route VoxMap::route(Point src, Point dst) {
         Point current = frontier.top().second;
         frontier.pop();
 
-        //std::cout << "Current: (" << current.x << ", " << current.y << ", " << current.z << ")\n";
-
         if (current == dst) {
             Route path;
             Point step = current;
@@ -163,7 +161,7 @@ Route VoxMap::route(Point src, Point dst) {
             }
             std::reverse(path.begin(), path.end());
 
-            // Validate the final path
+            // Validate the final path to ensure no movement off the map edges and no climbing into space
             Point pos = src;
             for (Move move : path) {
                 switch (move) {
@@ -208,7 +206,6 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            //std::cout << "  Neighbor: (" << next.x << ", " << next.y << ", " << next.z << ")\n";
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
