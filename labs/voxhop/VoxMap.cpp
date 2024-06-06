@@ -81,7 +81,7 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
@@ -160,8 +160,8 @@ Route VoxMap::route(Point src, Point dst) {
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
-
-            // Validate the final path to ensure no movement off the map edges and no climbing into space
+            
+            // Validate the path
             Point pos = src;
             for (Move move : path) {
                 switch (move) {
@@ -170,33 +170,33 @@ Route VoxMap::route(Point src, Point dst) {
                     case Move::SOUTH: pos.y += 1; break;
                     case Move::WEST: pos.x -= 1; break;
                 }
-
+                
                 // Check boundaries
                 if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || pos.z < 0 || pos.z >= height) {
                     throw NoRoute(src, dst);
                 }
-
+                
                 // Check if the voxel below is filled to avoid climbing into space
                 if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
                     throw NoRoute(src, dst);
                 }
-
+                
                 // Ensure that each move is valid and the path does not climb into unsupported space
                 if (!isFilled(pos.x, pos.y, pos.z) && (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1))) {
                     throw NoRoute(src, dst);
                 }
-
+                
                 // Check for jumping into the ceiling
                 if (pos.z + 1 < height && isFilled(pos.x, pos.y, pos.z + 1)) {
                     throw NoRoute(src, dst);
                 }
-
+                
                 // Check for walking into a wall
                 if (isFilled(pos.x, pos.y, pos.z)) {
                     throw NoRoute(src, dst);
                 }
             }
-
+            
             // Ensure final position is the destination
             if (pos == dst) {
                 return path;
