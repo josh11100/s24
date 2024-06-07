@@ -98,14 +98,11 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds
+        // Ensure new position is within bounds and not a wall
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check if we can move horizontally
+            // Check if we can move horizontally without hitting a wall
             if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
-            } else if (isFilled(nx, ny, nz)) {
-                // Handle wall detection
-                continue; // Skip this neighbor if there's a wall
             }
 
             // Check if we can fall down
@@ -117,12 +114,9 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
                 neighbors.emplace_back(nx, ny, downZ);
             }
 
-            // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+            // Check if we can jump up without hitting a ceiling
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz) && !isFilled(point.x, point.y, point.z + 1)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
-            } else if (nz + 1 < height && isFilled(nx, ny, nz + 1)) {
-                // Handle ceiling detection
-                continue; // Skip this neighbor if there's a ceiling above
             }
         }
     }
