@@ -102,6 +102,10 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
             // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz)) {
+                // Check for ceiling collision
+                if (nz + 1 < height && isFilled(nx, ny, nz + 1)) {
+                    continue;
+                }
                 neighbors.emplace_back(nx, ny, nz);
             }
 
