@@ -81,7 +81,7 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
@@ -98,10 +98,14 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds and not a wall
+        // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check if we can move horizontally without hitting a wall
+            // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz)) {
+                // Check for ceiling collision
+                if (nz + 1 < height && isFilled(nx, ny, nz + 1)) {
+                    continue;
+                }
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -114,8 +118,8 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
                 neighbors.emplace_back(nx, ny, downZ);
             }
 
-            // Check if we can jump up without hitting a ceiling
-            if (nz + 1 < height && isValidVoxel(nx, ny, nz + 1) && isFilled(nx, ny, nz) && !isFilled(point.x, point.y, point.z + 1)) {
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
             }
         }
@@ -157,22 +161,55 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
-                else if (prev.z < step.z) path.push_back(Move::UP);
-                else if (prev.z > step.z) path.push_back(Move::DOWN);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
-            return path;
+
+            // Validate the path
+            Point pos = src;
+            for (Move move : path) {
+                switch (move) {
+                    case Move::NORTH: pos.y -= 1; break;
+                    case Move::EAST: pos.x += 1; break;
+                    case Move::SOUTH: pos.y += 1; break;
+                    case Move::WEST: pos.x -= 1; break;
+                }
+
+                // Check boundaries
+                if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= depth || pos.z < 0 || pos.z >= height) {
+                    throw NoRoute(src, dst);
+                }
+
+                // Check if the voxel below is filled to avoid climbing into space
+                if (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1)) {
+                    throw NoRoute(src, dst);
+                }
+
+                // Ensure that each move is valid and the path does not climb into unsupported space
+                if (!isFilled(pos.x, pos.y, pos.z) && (pos.z > 0 && !isFilled(pos.x, pos.y, pos.z - 1))) {
+                    throw NoRoute(src, dst);
+                }
+
+                // Check for jumping into the ceiling
+                if (pos.z + 1 < height && isFilled(pos.x, pos.y, pos.z + 1)) {
+                    throw NoRoute(src, dst);
+                }
+
+                // Check for walking into a wall
+                if (isFilled(pos.x, pos.y, pos.z)) {
+                    throw NoRoute(src, dst);
+                }
+            }
+
+            // Ensure final position is the destination
+            if (pos == dst) {
+                return path;
+            } else {
+                throw NoRoute(src, dst);
+            }
         }
 
         for (const Point& next : getNeighbors(current)) {
-            // Validate the move to ensure it does not result in walking into a wall or jumping into a ceiling
-            if ((next.z == current.z && isFilled(next.x, next.y, next.z)) || // Walking into a wall
-                (next.z > current.z && isFilled(current.x, current.y, current.z + 1)) || // Jumping into a ceiling
-                (next.z < current.z && !isFilled(next.x, next.y, next.z + 1))) { // Falling into a void
-                continue;
-            }
-
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
