@@ -164,6 +164,13 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            // Validate the move to ensure it does not result in walking into a wall or jumping into a ceiling
+            if ((next.z == current.z && isFilled(next.x, next.y, next.z)) || // Walking into a wall
+                (next.z > current.z && isFilled(current.x, current.y, current.z + 1)) || // Jumping into a ceiling
+                (next.z < current.z && !isFilled(next.x, next.y, next.z + 1))) { // Falling into a void
+                continue;
+            }
+
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
