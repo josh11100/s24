@@ -89,34 +89,34 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         {pt.x + 1, pt.y, pt.z},
         {pt.x - 1, pt.y, pt.z},
         {pt.x, pt.y + 1, pt.z},
-        {pt.x, pt.y - 1, pt.z}
+        {pt.x, pt.y - 1, pt.z},
+        {pt.x, pt.y, pt.z + 1}, // Up
+        {pt.x, pt.y, pt.z - 1}  // Down
     };
 
     for (const auto& dir : directions) {
         Point neighbor = {dir.x, dir.y, dir.z};
 
-        // Check horizontal neighbors
-        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            neighbors.push_back(neighbor);
-        }
-
-        // Check for potential downward movement if not on the ground level
-        if (neighbor.z > 0 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z - 1)) {
-            Point down = neighbor;
-            while (down.z > 0 && isValidVoxel(down.x, down.y, down.z - 1)) {
-                down.z--;
-                if (isFilled(down.x, down.y, down.z - 1)) {
-                    neighbors.push_back(down);
-                    break;
-                }
+        if (dir.z == pt.z) {
+            // Horizontal movement
+            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+                neighbors.push_back(neighbor);
             }
-        }
-
-        // Check for potential upward movement if the space above is not filled
-        if (neighbor.z < height - 1 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
-            Point up = {neighbor.x, neighbor.y, neighbor.z + 1};
-            if (isValidVoxel(up.x, up.y, up.z)) {
-                neighbors.push_back(up);
+        } else if (dir.z > pt.z) {
+            // Upward movement
+            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z) && isFilled(pt.x, pt.y, pt.z)) {
+                neighbors.push_back(neighbor);
+            }
+        } else {
+            // Downward movement
+            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+                while (neighbor.z > 0 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z - 1)) {
+                    neighbor.z--;
+                    if (isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
+                        break;
+                    }
+                }
+                neighbors.push_back(neighbor);
             }
         }
     }
