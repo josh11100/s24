@@ -159,8 +159,6 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
-                else if (prev.z < step.z) path.push_back(Move::UP);
-                else if (prev.z > step.z) path.push_back(Move::DOWN);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
