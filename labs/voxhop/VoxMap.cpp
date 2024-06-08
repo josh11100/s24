@@ -1,3 +1,4 @@
+
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -81,31 +82,42 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
-    return !isFilled(x, y, z);
+    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
-    static const std::vector<std::tuple<int, int, int>> directions = {
-        {0, 1, 0}, {1, 0, 0}, {0, -1, 0}, {-1, 0, 0}, // Horizontal directions
-        {0, 0, 1}, {0, 0, -1},                       // Vertical up and down
-        {1, 1, 0}, {1, -1, 0}, {-1, 1, 0}, {-1, -1, 0}, // Diagonal on the same level
-        {1, 0, 1}, {0, 1, 1}, {-1, 0, 1}, {0, -1, 1},   // Diagonal upwards
-        {1, 0, -1}, {0, 1, -1}, {-1, 0, -1}, {0, -1, -1} // Diagonal downwards
+    static const std::vector<std::pair<int, int>> directions = {
+        {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
 
-    for (const auto& [dx, dy, dz] : directions) {
+    for (const auto& [dx, dy] : directions) {
         int nx = point.x + dx;
         int ny = point.y + dy;
-        int nz = point.z + dz;
+        int nz = point.z;
 
-        // Ensure new position is within bounds and valid
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && nz >= 0 && nz < height) {
+        // Ensure new position is within bounds
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
+            }
+
+            // Check if we can fall down
+            int downZ = nz;
+            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+                downZ--;
+            }
+            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
+                neighbors.emplace_back(nx, ny, downZ);
+            }
+
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
             }
         }
     }
