@@ -77,36 +77,43 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
+std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
-    std::vector<Point> directions = {
-        {pt.x + 1, pt.y, pt.z},
-        {pt.x - 1, pt.y, pt.z},
-        {pt.x, pt.y + 1, pt.z},
-        {pt.x, pt.y - 1, pt.z}
+    static const std::vector<std::pair<int, int>> directions = {
+        {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
 
-    for (auto neighbor : directions) {
-        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            // Fall down if there's no support below
-            while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                neighbor.z--;
+    for (const auto& [dx, dy] : directions) {
+        int nx = point.x + dx;
+        int ny = point.y + dy;
+        int nz = point.z;
+
+        // Ensure new position is within bounds
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Check if we can move horizontally
+            if (isValidVoxel(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz);
             }
 
-            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-                neighbors.push_back(neighbor);
+            // Check if we can fall down
+            int downZ = nz;
+            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+                downZ--;
             }
-        }
+            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
+                neighbors.emplace_back(nx, ny, downZ);
+            }
 
-        // Jump up if there's space above
-        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, pt.z + 1) && isFilled(neighbor.x, neighbor.y, pt.z)) {
-            neighbors.push_back({neighbor.x, neighbor.y, pt.z + 1});
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
+            }
         }
     }
 
