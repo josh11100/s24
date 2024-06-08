@@ -99,7 +99,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int nz = point.z;
 
         // Check if we can move horizontally
-        if (isValidVoxel(nx, ny, nz) && !isFilled(point.x + dx, point.y + dy, point.z)) {
+        if (isValidVoxel(nx, ny, nz) && isValidVoxel(point.x, point.y, point.z)) {
             neighbors.emplace_back(nx, ny, nz);
         }
 
