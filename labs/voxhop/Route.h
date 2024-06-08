@@ -4,11 +4,13 @@
 #include <iostream>
 #include <vector>
 
-enum Move: unsigned char {
-  NORTH = 0,
-  EAST  = 1,
-  SOUTH = 2,
-  WEST  = 3
+enum Move : unsigned char {
+    NORTH = 0,
+    EAST  = 1,
+    SOUTH = 2,
+    WEST  = 3,
+    UP    = 4,
+    DOWN  = 5
 };
 
 using Route = std::vector<Move>;
