@@ -77,22 +77,22 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
+std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     std::vector<Point> neighbors;
     static const std::vector<std::pair<int, int>> directions = {
         {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
 
     for (const auto& [dx, dy] : directions) {
-        int nx = point.x + dx;
-        int ny = point.y + dy;
-        int nz = point.z;
+        int nx = pt.x + dx;
+        int ny = pt.y + dy;
+        int nz = pt.z;
 
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
@@ -111,7 +111,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             }
 
             // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(pt.x, pt.y, pt.z)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
             }
         }
@@ -153,6 +153,8 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
+                else if (prev.z < step.z) path.push_back(Move::DOWN);
+                else if (prev.z > step.z) path.push_back(Move::UP);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
