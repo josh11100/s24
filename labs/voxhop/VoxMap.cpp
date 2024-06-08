@@ -36,8 +36,11 @@ void VoxMap::parseMap(std::istream& stream) {
     std::getline(stream, line); // Skip the newline character after dimensions
 
     for (int z = 0; z < height; ++z) {
-        if (!std::getline(stream, line) || !line.empty()) {
-            throw std::invalid_argument("Expected empty line between tiers");
+        if (!std::getline(stream, line)) {
+            throw std::invalid_argument("Unexpected end of file while reading map data (missing empty line)");
+        }
+        if (!line.empty()) {
+            throw std::invalid_argument("Expected empty line between tiers, found: " + line);
         }
 
         for (int y = 0; y < depth; ++y) {
@@ -54,7 +57,7 @@ void VoxMap::parseMap(std::istream& stream) {
             for (int x = 0; x < width / 4; ++x) {
                 char hexDigit = line[x];
                 if (!std::isxdigit(hexDigit)) {
-                    throw std::invalid_argument("Invalid character in map file");
+                    throw std::invalid_argument("Invalid character in map file: " + std::string(1, hexDigit));
                 }
                 int value = std::stoi(std::string(1, hexDigit), nullptr, 16);
                 std::bitset<4> bits(value);
@@ -74,47 +77,47 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
+std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
-    std::vector<Point> nbs;
-
-    std::vector<Point> directions = {
-        {pt.x + 1, pt.y, pt.z},
-        {pt.x - 1, pt.y, pt.z},
-        {pt.x, pt.y + 1, pt.z},
-        {pt.x, pt.y - 1, pt.z}
+    static const std::vector<std::pair<int, int>> directions = {
+        {0, 1}, {1, 0}, {0, -1}, {-1, 0}
     };
 
-    for (auto neighbor : directions) {
-        if (!isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            continue;
-        }
+    for (const auto& [dx, dy] : directions) {
+        int nx = point.x + dx;
+        int ny = point.y + dy;
+        int nz = point.z;
 
-        // Fall down if there's no support below
-        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            neighbor.z--;
-        }
+        // Ensure new position is within bounds
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Check if we can move horizontally
+            if (isValidVoxel(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz);
+            }
 
-        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            nbs.push_back(neighbor);
-            continue;
-        }
+            // Check if we can fall down
+            int downZ = nz;
+            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+                downZ--;
+            }
+            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
+                neighbors.emplace_back(nx, ny, downZ);
+            }
 
-        // Jump up if there's space above
-        neighbor.z++;
-        if (neighbor.z < height && !isFilled(neighbor.x, neighbor.y, neighbor.z) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            nbs.push_back(neighbor);
-            continue;
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
+            }
         }
     }
 
-    return nbs;
+    return neighbors;
 }
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
@@ -150,8 +153,6 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
-                else if (prev.z < step.z) path.push_back(Move::UP);
-                else if (prev.z > step.z) path.push_back(Move::DOWN);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
