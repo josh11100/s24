@@ -98,30 +98,22 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
-                // Ensure we don't jump into a ceiling
-                if (nz + 1 < height && isFilled(nx, ny, nz + 1)) {
-                    continue;
-                }
-                neighbors.emplace_back(nx, ny, nz);
-            }
+        // Check horizontal move
+        if (isValidVoxel(nx, ny, nz)) {
+            neighbors.emplace_back(nx, ny, nz);
+        }
 
-            // Check if we can fall down
-            int downZ = nz;
-            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
-                downZ--;
-            }
-            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
-                neighbors.emplace_back(nx, ny, downZ);
-            }
+        // Check falling down
+        while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
+            nz--;
+        }
+        if (nz != point.z && isValidVoxel(nx, ny, nz)) {
+            neighbors.emplace_back(nx, ny, nz);
+        }
 
-            // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
-                neighbors.emplace_back(nx, ny, nz + 1);
-            }
+        // Check jumping up
+        if (point.z + 1 < height && !isFilled(nx, ny, point.z + 1) && isFilled(nx, ny, point.z)) {
+            neighbors.emplace_back(nx, ny, point.z + 1);
         }
     }
 
@@ -130,35 +122,6 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
     return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
-}
-
-bool VoxMap::validatePath(const Route& path, Point src, Point dst) const {
-    Point current = src;
-    for (const auto& move : path) {
-        switch (move) {
-            case Move::NORTH: current.y -= 1; break;
-            case Move::EAST: current.x += 1; break;
-            case Move::SOUTH: current.y += 1; break;
-            case Move::WEST: current.x -= 1; break;
-        }
-
-        // Check if out of bounds
-        if (current.x < 0 || current.x >= width || current.y < 0 || current.y >= depth || current.z < 0 || current.z >= height) {
-            return false;
-        }
-
-        // Check for walking into a wall
-        if (isFilled(current.x, current.y, current.z)) {
-            return false;
-        }
-
-        // Check if jumping into the ceiling
-        if (current.z + 1 < height && isFilled(current.x, current.y, current.z + 1)) {
-            return false;
-        }
-    }
-
-    return current == dst;
 }
 
 Route VoxMap::route(Point src, Point dst) {
@@ -193,14 +156,13 @@ Route VoxMap::route(Point src, Point dst) {
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
-            if (validatePath(path, src, dst)) {
-                return path;
-            } else {
-                throw NoRoute(src, dst);
-            }
+            return path;
         }
 
         for (const Point& next : getNeighbors(current)) {
+            if (!isValidVoxel(next.x, next.y, next.z)) {
+                continue;
+            }
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
