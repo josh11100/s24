@@ -81,8 +81,8 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return false; // Out of bounds
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
+        return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
@@ -102,18 +102,19 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         }
 
         // Fall down if there's no support below
-        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
+        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
             neighbor.z--;
         }
 
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
             neighbors.push_back(neighbor);
+            continue;
         }
 
         // Jump up if there's space above
-        if (neighbor.z < height - 1 && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
-            neighbor.z++;
-            neighbors.push_back(neighbor);
+        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && isValidVoxel(neighbor.x, neighbor.y, pt.z + 1)) {
+            neighbors.push_back({neighbor.x, neighbor.y, pt.z + 1});
+            continue;
         }
     }
 
@@ -160,6 +161,9 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            if (!isValidVoxel(next.x, next.y, next.z)) {
+                continue;
+            }
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
