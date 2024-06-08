@@ -87,41 +87,41 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
+std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     std::vector<Point> neighbors;
-    static const std::vector<std::pair<int, int>> directions = {
-        {0, 1}, {1, 0}, {0, -1}, {-1, 0}
+    std::vector<Point> nbs;
+
+    std::vector<Point> directions = {
+        {pt.x + 1, pt.y, pt.z},
+        {pt.x - 1, pt.y, pt.z},
+        {pt.x, pt.y + 1, pt.z},
+        {pt.x, pt.y - 1, pt.z}
     };
 
-    for (const auto& [dx, dy] : directions) {
-        int nx = point.x + dx;
-        int ny = point.y + dy;
-        int nz = point.z;
+    for (auto neighbor : directions) {
+        if (!isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+            continue;
+        }
 
-        // Ensure new position is within bounds
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
-                neighbors.emplace_back(nx, ny, nz);
-            }
+        // Fall down if there's no support below
+        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+            neighbor.z--;
+        }
 
-            // Check if we can fall down
-            int downZ = nz;
-            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
-                downZ--;
-            }
-            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
-                neighbors.emplace_back(nx, ny, downZ);
-            }
+        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+            nbs.push_back(neighbor);
+            continue;
+        }
 
-            // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && !isFilled(nx, ny, nz + 2) && isValidVoxel(nx, ny, nz + 1)) {
-                neighbors.emplace_back(nx, ny, nz + 1);
-            }
+        // Jump up if there's space above
+        neighbor.z++;
+        if (neighbor.z < height && !isFilled(neighbor.x, neighbor.y, neighbor.z) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+            nbs.push_back(neighbor);
+            continue;
         }
     }
 
-    return neighbors;
+    return nbs;
 }
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
