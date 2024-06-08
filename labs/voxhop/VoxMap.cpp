@@ -99,19 +99,19 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         }
 
         // Check for walkable horizontal moves
-        if (neighbor.z > 0 && map[neighbor.z - 1][neighbor.y][neighbor.x] == false) {
-            while (neighbor.z > 0 && map[neighbor.z - 1][neighbor.y][neighbor.x] == false) {
+        if (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
+            while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
                 neighbor.z--;
             }
-            if (map[neighbor.z - 1][neighbor.y][neighbor.x]) {
+            if (isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
                 neighbors.push_back(neighbor);
             }
             continue;
         }
 
         // Check for valid jumps
-        if (neighbor.z < height - 1 && map[neighbor.z + 1][neighbor.y][neighbor.x] == false) {
-            if (neighbor.z + 2 >= height || map[neighbor.z + 2][neighbor.y][neighbor.x] == false) {
+        if (neighbor.z < height - 1 && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1)) {
+            if (neighbor.z + 2 >= height || !isFilled(neighbor.x, neighbor.y, neighbor.z + 2)) {
                 neighbors.push_back({neighbor.x, neighbor.y, neighbor.z + 1});
             }
             continue;
@@ -125,7 +125,6 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
 
     return neighbors;
 }
-
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
     return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
