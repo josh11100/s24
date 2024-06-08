@@ -92,34 +92,32 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         {pt.x, pt.y - 1, pt.z}
     };
 
-    for (auto neighbor : directions) {
-        // If out of bounds, continue
-        if (neighbor.x < 0 || neighbor.x >= width || neighbor.y < 0 || neighbor.y >= depth || neighbor.z < 0 || neighbor.z >= height) {
-            continue;
-        }
+    for (const auto& dir : directions) {
+        Point neighbor = {dir.x, dir.y, dir.z};
 
-        // Check for walkable horizontal moves
-        if (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-            while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                neighbor.z--;
-            }
-            if (isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                neighbors.push_back(neighbor);
-            }
-            continue;
-        }
-
-        // Check for valid jumps
-        if (neighbor.z < height - 1 && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1)) {
-            if (neighbor.z + 2 >= height || !isFilled(neighbor.x, neighbor.y, neighbor.z + 2)) {
-                neighbors.push_back({neighbor.x, neighbor.y, neighbor.z + 1});
-            }
-            continue;
-        }
-
-        // Check if current position is valid
+        // Check horizontal neighbors
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
             neighbors.push_back(neighbor);
+        }
+
+        // Check for potential downward movement if not on the ground level
+        if (neighbor.z > 0 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z - 1)) {
+            Point down = neighbor;
+            while (down.z > 0 && isValidVoxel(down.x, down.y, down.z - 1)) {
+                down.z--;
+                if (isFilled(down.x, down.y, down.z - 1)) {
+                    neighbors.push_back(down);
+                    break;
+                }
+            }
+        }
+
+        // Check for potential upward movement if the space above is not filled
+        if (neighbor.z < height - 1 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
+            Point up = {neighbor.x, neighbor.y, neighbor.z + 1};
+            if (isValidVoxel(up.x, up.y, up.z)) {
+                neighbors.push_back(up);
+            }
         }
     }
 
@@ -150,6 +148,8 @@ Route VoxMap::route(Point src, Point dst) {
         Point current = frontier.top().second;
         frontier.pop();
 
+        std::cout << "Exploring: (" << current.x << ", " << current.y << ", " << current.z << ")" << std::endl;
+
         if (current == dst) {
             Route path;
             Point step = current;
@@ -163,6 +163,8 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
+                else if (prev.z < step.z) path.push_back(Move::UP);
+                else if (prev.z > step.z) path.push_back(Move::DOWN);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
@@ -170,10 +172,13 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            std::cout << "  Neighbor: (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
             int newCost = costSoFar[current] + 1;
+            std::cout << "    New Cost: " << newCost << " for neighbor (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
                 int priority = newCost + heuristic(next, dst);
+                std::cout << "    Priority: " << priority << " for neighbor (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
                 frontier.emplace(priority, next);
                 cameFrom[next] = current;
             }
