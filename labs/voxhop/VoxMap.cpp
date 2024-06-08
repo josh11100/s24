@@ -1,3 +1,4 @@
+
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -98,9 +99,10 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds and not obstructed horizontally
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && nz >= 0 && nz < height) {
-            if (!isFilled(nx, ny, nz) && !isFilled(nx, ny, nz + 1)) {
+        // Ensure new position is within bounds
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Check if we can move horizontally
+            if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -114,7 +116,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             }
 
             // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz) && isValidVoxel(nx, ny, nz + 1)) {
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
             }
         }
@@ -163,10 +165,6 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            // Ensure the move is valid
-            if (!isValidVoxel(next.x, next.y, next.z)) {
-                continue;
-            }
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
