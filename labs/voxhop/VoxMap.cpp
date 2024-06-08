@@ -78,9 +78,9 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
     if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return false;
+        return false; // Ensure within bounds
     }
-    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
+    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1)); // Check for filled voxel below
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
@@ -126,9 +126,11 @@ int VoxMap::heuristic(const Point& a, const Point& b) const {
 
 Route VoxMap::route(Point src, Point dst) {
     if (!isValidVoxel(src.x, src.y, src.z)) {
+        std::cerr << "Invalid point: (" << src.x << ", " << src.y << ", " << src.z << ")" << std::endl;
         throw InvalidPoint(src);
     }
     if (!isValidVoxel(dst.x, dst.y, dst.z)) {
+        std::cerr << "Invalid point: (" << dst.x << ", " << dst.y << ", " << dst.z << ")" << std::endl;
         throw InvalidPoint(dst);
     }
 
