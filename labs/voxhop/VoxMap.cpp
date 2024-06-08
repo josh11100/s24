@@ -112,7 +112,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         }
 
         // Jump up if there's space above
-        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && isValidVoxel(neighbor.x, neighbor.y, pt.z + 1)) {
+        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, pt.z + 1) && isFilled(neighbor.x, neighbor.y, pt.z)) {
             neighbors.push_back({neighbor.x, neighbor.y, pt.z + 1});
             continue;
         }
