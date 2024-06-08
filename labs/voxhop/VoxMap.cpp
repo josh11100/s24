@@ -1,4 +1,3 @@
-
 #include "VoxMap.h"
 #include "Errors.h"
 #include <sstream>
@@ -82,7 +81,7 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
@@ -99,8 +98,8 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+        // Ensure new position is within bounds and not blocked by a wall
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && !isFilled(nx, ny, nz)) {
             // Check if we can move horizontally
             if (isValidVoxel(nx, ny, nz) && (nz == 0 || !isFilled(nx, ny, nz + 1))) {
                 neighbors.emplace_back(nx, ny, nz);
