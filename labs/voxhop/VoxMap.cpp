@@ -97,21 +97,20 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     };
 
     for (auto neighbor : directions) {
-        if (!isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            continue;
-        }
-
-        // Fall down if there's no support below
-        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-            neighbor.z--;
-        }
-
+        // Horizontal move
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            neighbors.push_back(neighbor);
+            // Check if falling is needed
+            while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
+                neighbor.z--;
+            }
+            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+                neighbors.push_back(neighbor);
+            }
         }
 
-        // Jump up if there's space above
-        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1) && isFilled(neighbor.x, neighbor.y, neighbor.z)) {
+        // Jumping up
+        if (isValidVoxel(pt.x, pt.y, pt.z + 1) && !isFilled(pt.x, pt.y, pt.z + 1) && 
+            isValidVoxel(neighbor.x, neighbor.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, pt.z + 1)) {
             neighbors.push_back({neighbor.x, neighbor.y, pt.z + 1});
         }
     }
@@ -159,9 +158,6 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            if (!isValidVoxel(next.x, next.y, next.z)) {
-                continue;
-            }
             int newCost = costSoFar[current] + 1;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
