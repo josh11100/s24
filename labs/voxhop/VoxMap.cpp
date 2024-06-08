@@ -89,35 +89,35 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         {pt.x + 1, pt.y, pt.z},
         {pt.x - 1, pt.y, pt.z},
         {pt.x, pt.y + 1, pt.z},
-        {pt.x, pt.y - 1, pt.z},
-        {pt.x, pt.y, pt.z + 1}, // Up
-        {pt.x, pt.y, pt.z - 1}  // Down
+        {pt.x, pt.y - 1, pt.z}
     };
 
+    // Add valid horizontal neighbors
     for (const auto& dir : directions) {
-        Point neighbor = {dir.x, dir.y, dir.z};
+        if (isValidVoxel(dir.x, dir.y, dir.z)) {
+            neighbors.push_back(dir);
+        }
+    }
 
-        if (dir.z == pt.z) {
-            // Horizontal movement
-            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-                neighbors.push_back(neighbor);
+    // Check for downward movement
+    if (pt.z > 0 && isValidVoxel(pt.x, pt.y, pt.z - 1)) {
+        Point down = pt;
+        while (down.z > 0 && isValidVoxel(down.x, down.y, down.z - 1)) {
+            down.z--;
+            if (isFilled(down.x, down.y, down.z - 1)) {
+                break;
             }
-        } else if (dir.z > pt.z) {
-            // Upward movement
-            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z) && isFilled(pt.x, pt.y, pt.z)) {
-                neighbors.push_back(neighbor);
-            }
-        } else {
-            // Downward movement
-            if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-                while (neighbor.z > 0 && isValidVoxel(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                    neighbor.z--;
-                    if (isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                        break;
-                    }
-                }
-                neighbors.push_back(neighbor);
-            }
+        }
+        if (down != pt) {
+            neighbors.push_back(down);
+        }
+    }
+
+    // Check for upward movement
+    if (pt.z < height - 1 && isFilled(pt.x, pt.y, pt.z)) {
+        Point up = {pt.x, pt.y, pt.z + 1};
+        if (isValidVoxel(up.x, up.y, up.z)) {
+            neighbors.push_back(up);
         }
     }
 
