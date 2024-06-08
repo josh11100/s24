@@ -89,8 +89,6 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
 
 std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     std::vector<Point> neighbors;
-    std::vector<Point> nbs;
-
     std::vector<Point> directions = {
         {pt.x + 1, pt.y, pt.z},
         {pt.x - 1, pt.y, pt.z},
@@ -104,24 +102,22 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         }
 
         // Fall down if there's no support below
-        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
             neighbor.z--;
         }
 
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            nbs.push_back(neighbor);
-            continue;
+            neighbors.push_back(neighbor);
         }
 
         // Jump up if there's space above
-        neighbor.z++;
-        if (neighbor.z < height && !isFilled(neighbor.x, neighbor.y, neighbor.z) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            nbs.push_back(neighbor);
-            continue;
+        if (neighbor.z < height - 1 && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
+            neighbor.z++;
+            neighbors.push_back(neighbor);
         }
     }
 
-    return nbs;
+    return neighbors;
 }
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
