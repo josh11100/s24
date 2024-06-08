@@ -102,19 +102,17 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         }
 
         // Fall down if there's no support below
-        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+        while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
             neighbor.z--;
         }
 
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
             neighbors.push_back(neighbor);
-            continue;
         }
 
         // Jump up if there's space above
-        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, pt.z + 1) && isFilled(neighbor.x, neighbor.y, pt.z)) {
+        if (pt.z + 1 < height && !isFilled(pt.x, pt.y, pt.z + 1) && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1) && isFilled(neighbor.x, neighbor.y, neighbor.z)) {
             neighbors.push_back({neighbor.x, neighbor.y, pt.z + 1});
-            continue;
         }
     }
 
