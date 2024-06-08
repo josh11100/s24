@@ -83,8 +83,8 @@ bool VoxMap::isValidVoxel(int x, int y, int z) const {
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
-bool VoxMap::isEmptyAbove(int x, int y, int z) const {
-    return !isFilled(x, y, z + 1);
+int VoxMap::heuristic(const Point& a, const Point& b) const {
+    return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
@@ -98,14 +98,14 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds and valid
+        // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Horizontal move
-            if (isValidVoxel(nx, ny, nz) && isEmptyAbove(nx, ny, nz)) {
+            // Check if we can move horizontally
+            if (isValidVoxel(nx, ny, nz)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
-            // Fall
+            // Check if we can fall down
             int downZ = nz;
             while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
                 downZ--;
@@ -114,9 +114,12 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
                 neighbors.emplace_back(nx, ny, downZ);
             }
 
-            // Jump
-            if (nz + 1 < height && isValidVoxel(nx, ny, nz + 1) && isEmptyAbove(nx, ny, nz + 1) && isEmptyAbove(nx, ny, nz + 2)) {
-                neighbors.emplace_back(nx, ny, nz + 1);
+            // Check if we can jump up, ensuring we don't jump into the ceiling
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+                // Ensure there's no ceiling above the current position
+                if (nz + 2 < height && !isFilled(point.x, point.y, point.z + 1)) {
+                    neighbors.emplace_back(nx, ny, nz + 1);
+                }
             }
         }
     }
@@ -125,15 +128,12 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 }
 
 
-int VoxMap::heuristic(const Point& a, const Point& b) const {
-    return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
-}
-
+// Inside route function, add logging
 Route VoxMap::route(Point src, Point dst) {
-    if (!isValidVoxel(src.x, src.y, src.z) || !isFilled(src.x, src.y, src.z)) {
+    if (!isValidVoxel(src.x, src.y, src.z)) {
         throw InvalidPoint(src);
     }
-    if (!isValidVoxel(dst.x, dst.y, dst.z) || !isFilled(dst.x, dst.y, dst.z)) {
+    if (!isValidVoxel(dst.x, dst.y, dst.z)) {
         throw InvalidPoint(dst);
     }
 
@@ -154,6 +154,10 @@ Route VoxMap::route(Point src, Point dst) {
             Point step = current;
             while (step != src) {
                 Point prev = cameFrom[step];
+                if (!isValidVoxel(step.x, step.y, step.z)) {
+                    throw NoRoute(src, dst);
+                }
+
                 if (prev.x < step.x) path.push_back(Move::EAST);
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
