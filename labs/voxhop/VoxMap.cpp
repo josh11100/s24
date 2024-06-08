@@ -8,7 +8,6 @@
 #include <unordered_set>
 #include <algorithm>
 #include <iostream>
-#include <fstream>
 
 struct PointHash {
     std::size_t operator()(const Point& point) const {
@@ -17,7 +16,12 @@ struct PointHash {
 };
 
 VoxMap::VoxMap(std::istream& stream) {
-    parseMap(stream);
+    try {
+        parseMap(stream);
+    } catch (const std::exception& e) {
+        std::cerr << "Error while parsing map: " << e.what() << std::endl;
+        throw;
+    }
 }
 
 VoxMap::~VoxMap() {
@@ -77,14 +81,10 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
         return false;
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
-}
-
-int VoxMap::heuristic(const Point& a, const Point& b) const {
-    return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
@@ -101,7 +101,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         // Ensure new position is within bounds
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
             // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz) && !isFilled(point.x, point.y, point.z + 1)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -117,7 +117,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             // Check if we can jump up, ensuring we don't jump into the ceiling
             if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
                 // Ensure there's no ceiling above the current position
-                if (nz + 2 < height && !isFilled(point.x, point.y, point.z + 1)) {
+                if (nz + 2 >= height || !isFilled(point.x, point.y, point.z + 1)) {
                     neighbors.emplace_back(nx, ny, nz + 1);
                 }
             }
@@ -127,8 +127,10 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     return neighbors;
 }
 
+int VoxMap::heuristic(const Point& a, const Point& b) const {
+    return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
+}
 
-// Inside route function, add logging
 Route VoxMap::route(Point src, Point dst) {
     if (!isValidVoxel(src.x, src.y, src.z)) {
         throw InvalidPoint(src);
