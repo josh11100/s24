@@ -82,48 +82,32 @@ bool VoxMap::isFilled(int x, int y, int z) const {
 }
 
 bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z <= 0 || z >= height) {
-        return false;
+    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
+        return false; // Out of bounds
     }
     return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1));
 }
 
 std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     std::vector<Point> neighbors;
-    static const std::vector<std::pair<int, int>> directions = {
-        {0, 1}, {1, 0}, {0, -1}, {-1, 0}
+    static const std::vector<std::tuple<int, int, int>> directions = {
+        {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
     };
 
-    for (const auto& [dx, dy] : directions) {
+    for (const auto& [dx, dy, dz] : directions) {
         int nx = point.x + dx;
         int ny = point.y + dy;
-        int nz = point.z;
+        int nz = point.z + dz;
 
-        // Ensure new position is within bounds
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
-            // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
-                neighbors.emplace_back(nx, ny, nz);
-            }
-
-            // Check if we can fall down
-            int downZ = nz;
-            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
-                downZ--;
-            }
-            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
-                neighbors.emplace_back(nx, ny, downZ);
-            }
-
-            // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
-                neighbors.emplace_back(nx, ny, nz + 1);
-            }
+        // Ensure new position is within bounds and is a valid voxel
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && nz >= 0 && nz < height && isValidVoxel(nx, ny, nz)) {
+            neighbors.emplace_back(nx, ny, nz);
         }
     }
 
     return neighbors;
 }
+
 
 int VoxMap::heuristic(const Point& a, const Point& b) const {
     return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
