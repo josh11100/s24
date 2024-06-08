@@ -98,10 +98,10 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds and not blocked by a wall
-        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && !isFilled(nx, ny, nz)) {
-            // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz) && (nz == 0 || !isFilled(nx, ny, nz + 1))) {
+        // Ensure new position is within bounds
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
+            // Check if we can move horizontally without hitting the ceiling
+            if (isValidVoxel(nx, ny, nz) && !isFilled(nx, ny, nz + 1)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -159,6 +159,8 @@ Route VoxMap::route(Point src, Point dst) {
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
                 else if (prev.y > step.y) path.push_back(Move::NORTH);
+                else if (prev.z < step.z) path.push_back(Move::UP);
+                else if (prev.z > step.z) path.push_back(Move::DOWN);
                 step = prev;
             }
             std::reverse(path.begin(), path.end());
