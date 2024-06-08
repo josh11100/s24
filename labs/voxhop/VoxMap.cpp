@@ -124,15 +124,16 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
     return neighbors;
 }
 
+
 int VoxMap::heuristic(const Point& a, const Point& b) const {
     return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
 }
 
 Route VoxMap::route(Point src, Point dst) {
-    if (!isValidVoxel(src.x, src.y, src.z)) {
+    if (!isValidVoxel(src.x, src.y, src.z) || !isFilled(src.x, src.y, src.z)) {
         throw InvalidPoint(src);
     }
-    if (!isValidVoxel(dst.x, dst.y, dst.z)) {
+    if (!isValidVoxel(dst.x, dst.y, dst.z) || !isFilled(dst.x, dst.y, dst.z)) {
         throw InvalidPoint(dst);
     }
 
