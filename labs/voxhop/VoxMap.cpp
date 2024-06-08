@@ -100,20 +100,26 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
 
         // Check horizontal move
         if (isValidVoxel(nx, ny, nz)) {
-            neighbors.emplace_back(nx, ny, nz);
+            // Ensure we are not moving through a wall
+            if (isValidVoxel(point.x, point.y, point.z) && !isFilled(point.x, point.y, point.z)) {
+                neighbors.emplace_back(nx, ny, nz);
+            }
         }
 
         // Check falling down
-        while (nz > 0 && !isFilled(nx, ny, nz - 1)) {
-            nz--;
+        int downZ = nz;
+        while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+            downZ--;
         }
-        if (nz != point.z && isValidVoxel(nx, ny, nz)) {
-            neighbors.emplace_back(nx, ny, nz);
+        if (downZ != point.z && isValidVoxel(nx, ny, downZ)) {
+            neighbors.emplace_back(nx, ny, downZ);
         }
 
         // Check jumping up
-        if (point.z + 1 < height && !isFilled(nx, ny, point.z + 1) && isFilled(nx, ny, point.z)) {
-            neighbors.emplace_back(nx, ny, point.z + 1);
+        if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz + 1)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
+            }
         }
     }
 
@@ -160,6 +166,7 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
+            // Ensure the move is valid
             if (!isValidVoxel(next.x, next.y, next.z)) {
                 continue;
             }
