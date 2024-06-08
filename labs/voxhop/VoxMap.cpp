@@ -99,10 +99,10 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int ny = point.y + dy;
         int nz = point.z;
 
-        // Ensure new position is within bounds
+        // Ensure new position is within bounds and not obstructed horizontally
         if (nx >= 0 && nx < width && ny >= 0 && ny < depth) {
             // Check if we can move horizontally
-            if (isValidVoxel(nx, ny, nz)) {
+            if (isValidVoxel(nx, ny, nz) && !isFilled(nx, ny, nz + 1)) {
                 neighbors.emplace_back(nx, ny, nz);
             }
 
@@ -116,7 +116,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
             }
 
             // Check if we can jump up
-            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz)) {
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz) && isValidVoxel(nx, ny, nz + 1)) {
                 neighbors.emplace_back(nx, ny, nz + 1);
             }
         }
