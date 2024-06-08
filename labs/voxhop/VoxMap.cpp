@@ -99,22 +99,24 @@ std::vector<Point> VoxMap::getNeighbors(const Point& point) const {
         int nz = point.z;
 
         // Ensure new position is within bounds and not obstructed horizontally
-        if (isValidVoxel(nx, ny, nz) && !isFilled(nx, ny, nz + 1)) {
-            neighbors.emplace_back(nx, ny, nz);
-        }
+        if (nx >= 0 && nx < width && ny >= 0 && ny < depth && nz >= 0 && nz < height) {
+            if (!isFilled(nx, ny, nz) && !isFilled(nx, ny, nz + 1)) {
+                neighbors.emplace_back(nx, ny, nz);
+            }
 
-        // Check if we can fall down
-        int downZ = nz;
-        while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
-            downZ--;
-        }
-        if (downZ != point.z && isValidVoxel(nx, ny, downZ)) {
-            neighbors.emplace_back(nx, ny, downZ);
-        }
+            // Check if we can fall down
+            int downZ = nz;
+            while (downZ > 0 && !isFilled(nx, ny, downZ - 1)) {
+                downZ--;
+            }
+            if (downZ != nz && isValidVoxel(nx, ny, downZ)) {
+                neighbors.emplace_back(nx, ny, downZ);
+            }
 
-        // Check if we can jump up
-        if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz) && isValidVoxel(nx, ny, nz + 1)) {
-            neighbors.emplace_back(nx, ny, nz + 1);
+            // Check if we can jump up
+            if (nz + 1 < height && !isFilled(nx, ny, nz + 1) && isFilled(nx, ny, nz) && isValidVoxel(nx, ny, nz + 1)) {
+                neighbors.emplace_back(nx, ny, nz + 1);
+            }
         }
     }
 
