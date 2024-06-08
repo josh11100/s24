@@ -148,8 +148,6 @@ Route VoxMap::route(Point src, Point dst) {
         Point current = frontier.top().second;
         frontier.pop();
 
-        std::cout << "Exploring: (" << current.x << ", " << current.y << ", " << current.z << ")" << std::endl;
-
         if (current == dst) {
             Route path;
             Point step = current;
@@ -172,13 +170,10 @@ Route VoxMap::route(Point src, Point dst) {
         }
 
         for (const Point& next : getNeighbors(current)) {
-            std::cout << "  Neighbor: (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
             int newCost = costSoFar[current] + 1;
-            std::cout << "    New Cost: " << newCost << " for neighbor (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
             if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
                 costSoFar[next] = newCost;
                 int priority = newCost + heuristic(next, dst);
-                std::cout << "    Priority: " << priority << " for neighbor (" << next.x << ", " << next.y << ", " << next.z << ")" << std::endl;
                 frontier.emplace(priority, next);
                 cameFrom[next] = current;
             }
