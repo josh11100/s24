@@ -98,28 +98,23 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
             continue;
         }
 
-        // Check for walkable horizontal moves
-        if (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-            while (neighbor.z > 0 && !isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                neighbor.z--;
-            }
-            if (isFilled(neighbor.x, neighbor.y, neighbor.z - 1)) {
-                neighbors.push_back(neighbor);
-            }
-            continue;
-        }
-
-        // Check for valid jumps
-        if (neighbor.z < height - 1 && !isFilled(neighbor.x, neighbor.y, neighbor.z + 1)) {
-            if (neighbor.z + 2 >= height || !isFilled(neighbor.x, neighbor.y, neighbor.z + 2)) {
-                neighbors.push_back({neighbor.x, neighbor.y, neighbor.z + 1});
-            }
-            continue;
-        }
-
-        // Check if current position is valid
+        // Check if we can move horizontally
         if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            neighbors.push_back(neighbor);
+            neighbors.emplace_back(neighbor);
+        }
+
+        // Check if we can fall down
+        int downZ = neighbor.z;
+        while (downZ > 0 && !isFilled(neighbor.x, neighbor.y, downZ - 1)) {
+            downZ--;
+        }
+        if (downZ != neighbor.z && isValidVoxel(neighbor.x, neighbor.y, downZ)) {
+            neighbors.emplace_back(neighbor.x, neighbor.y, downZ);
+        }
+
+        // Check if we can jump up
+        if (neighbor.z + 1 < height && isFilled(pt.x, pt.y, pt.z + 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
+            neighbors.emplace_back(neighbor.x, neighbor.y, neighbor.z + 1);
         }
     }
 
