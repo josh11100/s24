@@ -100,25 +100,19 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     }
 
     // Check for downward movement
-    if (pt.z > 0 && isValidVoxel(pt.x, pt.y, pt.z - 1)) {
+    if (pt.z > 0 && !isFilled(pt.x, pt.y, pt.z - 1)) {
         Point down = pt;
-        while (down.z > 0 && isValidVoxel(down.x, down.y, down.z - 1)) {
+        while (down.z > 0 && !isFilled(down.x, down.y, down.z - 1)) {
             down.z--;
-            if (isFilled(down.x, down.y, down.z - 1)) {
-                break;
-            }
         }
-        if (down != pt) {
+        if (down != pt && isValidVoxel(down.x, down.y, down.z)) {
             neighbors.push_back(down);
         }
     }
 
     // Check for upward movement
-    if (pt.z < height - 1 && isFilled(pt.x, pt.y, pt.z)) {
-        Point up = {pt.x, pt.y, pt.z + 1};
-        if (isValidVoxel(up.x, up.y, up.z) && !isFilled(pt.x, pt.y, pt.z + 1)) {
-            neighbors.push_back(up);
-        }
+    if (pt.z < height - 1 && isValidVoxel(pt.x, pt.y, pt.z + 1) && !isFilled(pt.x, pt.y, pt.z + 1)) {
+        neighbors.push_back({pt.x, pt.y, pt.z + 1});
     }
 
     return neighbors;
