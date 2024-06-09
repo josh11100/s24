@@ -43,7 +43,4 @@ struct PointHash {
 };
 
 
-
-
-
 #endif

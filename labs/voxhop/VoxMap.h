@@ -1,3 +1,4 @@
+
 #ifndef VOXMAP_H
 #define VOXMAP_H
 
@@ -6,8 +7,6 @@
 #include <string>
 #include <unordered_map>
 #include <map>
-#include <unordered_set>
-#include <set>
 
 
 #include "Point.h"
@@ -29,18 +28,10 @@ class VoxMap {
 
   std::vector<vector<vector<bool>>> map;
 
-
-  std::unordered_map<Point, std::vector<Point>, PointHash> neighborsMap; 
-
   std::vector<Point> nbs;
   
   
   // Member Variables
-
-  void computeNeighbors();
-  std::vector<Point> getNeighbors(const Point& pt);
-
-
 
 
   // Helper Functions
