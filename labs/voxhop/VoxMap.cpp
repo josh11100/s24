@@ -94,8 +94,9 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
 
     // Add valid horizontal neighbors
     for (const auto& dir : directions) {
-        if (isValidVoxel(dir.x, dir.y, dir.z)) {
-            neighbors.push_back(dir);
+        Point neighbor = {pt.x + dir.x, pt.y + dir.y, pt.z};
+        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
+            neighbors.push_back(neighbor);
         }
     }
 
@@ -129,6 +130,15 @@ int VoxMap::heuristic(const Point& a, const Point& b) const {
 }
 
 Route VoxMap::route(Point src, Point dst) {
+    // Check if source and destination are within map bounds
+    if (src.x < 0 || src.x >= width || src.y < 0 || src.y >= depth || src.z < 0 || src.z >= height) {
+        throw InvalidPoint(src);
+    }
+    if (dst.x < 0 || dst.x >= width || dst.y < 0 || dst.y >= depth || dst.z < 0 || dst.z >= height) {
+        throw InvalidPoint(dst);
+    }
+
+    // Check if source and destination are valid voxels
     if (!isValidVoxel(src.x, src.y, src.z)) {
         throw InvalidPoint(src);
     }
