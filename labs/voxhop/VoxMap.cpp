@@ -116,7 +116,7 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
     // Check for upward movement
     if (pt.z < height - 1 && isFilled(pt.x, pt.y, pt.z)) {
         Point up = {pt.x, pt.y, pt.z + 1};
-        if (isValidVoxel(up.x, up.y, up.z)) {
+        if (isValidVoxel(up.x, up.y, up.z) && !isFilled(pt.x, pt.y, pt.z + 1)) {
             neighbors.push_back(up);
         }
     }
