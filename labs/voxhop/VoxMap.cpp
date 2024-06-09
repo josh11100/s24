@@ -92,29 +92,32 @@ std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
         {pt.x, pt.y - 1, pt.z}
     };
 
-    for (auto neighbor : directions) {
-        // If out of bounds, continue
-        if (neighbor.x < 0 || neighbor.x >= width || neighbor.y < 0 || neighbor.y >= depth || neighbor.z < 0 || neighbor.z >= height) {
-            continue;
+    // Add valid horizontal neighbors
+    for (const auto& dir : directions) {
+        if (isValidVoxel(dir.x, dir.y, dir.z)) {
+            neighbors.push_back(dir);
         }
+    }
 
-        // Check if we can move horizontally
-        if (isValidVoxel(neighbor.x, neighbor.y, neighbor.z)) {
-            neighbors.emplace_back(neighbor);
+    // Check for downward movement
+    if (pt.z > 0 && isValidVoxel(pt.x, pt.y, pt.z - 1)) {
+        Point down = pt;
+        while (down.z > 0 && isValidVoxel(down.x, down.y, down.z - 1)) {
+            down.z--;
+            if (isFilled(down.x, down.y, down.z - 1)) {
+                break;
+            }
         }
+        if (down != pt) {
+            neighbors.push_back(down);
+        }
+    }
 
-        // Check if we can fall down
-        int downZ = neighbor.z;
-        while (downZ > 0 && !isFilled(neighbor.x, neighbor.y, downZ - 1)) {
-            downZ--;
-        }
-        if (downZ != neighbor.z && isValidVoxel(neighbor.x, neighbor.y, downZ)) {
-            neighbors.emplace_back(neighbor.x, neighbor.y, downZ);
-        }
-
-        // Check if we can jump up
-        if (neighbor.z + 1 < height && isFilled(pt.x, pt.y, pt.z + 1) && isValidVoxel(neighbor.x, neighbor.y, neighbor.z + 1)) {
-            neighbors.emplace_back(neighbor.x, neighbor.y, neighbor.z + 1);
+    // Check for upward movement
+    if (pt.z < height - 1 && isFilled(pt.x, pt.y, pt.z)) {
+        Point up = {pt.x, pt.y, pt.z + 1};
+        if (isValidVoxel(up.x, up.y, up.z)) {
+            neighbors.push_back(up);
         }
     }
 
@@ -150,6 +153,11 @@ Route VoxMap::route(Point src, Point dst) {
             Point step = current;
             while (step != src) {
                 Point prev = cameFrom[step];
+
+                if (!isValidVoxel(step.x, step.y, step.z)) {
+                    throw NoRoute(src, dst);
+                }
+
                 if (prev.x < step.x) path.push_back(Move::EAST);
                 else if (prev.x > step.x) path.push_back(Move::WEST);
                 else if (prev.y < step.y) path.push_back(Move::SOUTH);
