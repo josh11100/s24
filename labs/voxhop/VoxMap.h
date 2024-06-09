@@ -1,29 +1,89 @@
 #ifndef VOXMAP_H
 #define VOXMAP_H
 
+#include <istream>
 #include <vector>
-#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <map>
+#include <unordered_set>
+#include <set>
+
+
 #include "Point.h"
 #include "Route.h"
-#include "Errors.h"
+
+using namespace std;
 
 class VoxMap {
+  // Point bounds;
+  // std::vector<int> xdir;
+  // std::vectr<int> ydir;
+  // std::vector<int> zdir;
+
+
+
+  int width; // this is x
+  int depth; // this is y
+  int height; // this is z
+
+  std::vector<vector<vector<bool>>> map;
+
+
+  std::unordered_map<Point, std::vector<Point>, PointHash> neighborsMap; 
+
+  std::vector<Point> nbs;
+  
+  
+  // Member Variables
+
+  void computeNeighbors();
+  std::vector<Point> getNeighbors(const Point& pt);
+
+
+
+
+  // Helper Functions
+  // convert hex to binary 
+  std::string conversion(const std::string& str);
+
+
+  // void BFS(const std::vector<std::vector<std::vector<bool>>>& map, const Point& src, const Point& dst);
+  std::vector<Point> neighbors(const Point& pt);
+
+  
+  // do this after i do the BFS
+  //
+  bool Validity(const Point& point);
+  bool val(const Point& point);
+
+  bool validBox(const Point& point);
+
+ Route Astart(const Point& src, const Point& dst);
+
+
+
+  // bool fullBox(const Point& point);
+
+  double h(const Point& src, const Point& dst);
+  
+
+ struct Comparison {
+    std::unordered_map<Point, double, PointHash>& fScore;
+
+    Comparison(std::unordered_map<Point, double, PointHash>& fScore) : fScore(fScore) {}
+
+    bool operator()(const Point& lhs, const Point& rhs) const {
+      return fScore[lhs] > fScore[rhs];
+    }
+  };
+ 
+
 public:
-    VoxMap(std::istream& stream);
-    ~VoxMap();
-    
-    Route route(Point src, Point dst);
+  VoxMap(std::istream& stream);
+  ~VoxMap();
 
-private:
-    int width, depth, height;
-    std::vector<std::vector<std::vector<bool>>> map;
-
-    void parseMap(std::istream& stream);
-    bool isFilled(int x, int y, int z) const;
-    bool isValidVoxel(int x, int y, int z) const;
-    bool isEmptyAbove(int x, int y, int z) const;
-    std::vector<Point> getNeighbors(const Point& point) const;
-    int heuristic(const Point& a, const Point& b) const;
+  Route route(Point src, Point dst);
 };
 
-#endif // VOXMAP_H
+#endif

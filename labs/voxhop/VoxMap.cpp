@@ -1,179 +1,405 @@
 #include "VoxMap.h"
 #include "Errors.h"
-#include <sstream>
-#include <bitset>
-#include <stdexcept>
-#include <queue>
-#include <unordered_map>
-#include <unordered_set>
-#include <algorithm>
+#include "Route.h"
 #include <iostream>
-#include <fstream>
+#include <sstream>
+#include <queue>
+#include <unordered_set>
+#include <unordered_map>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <set>
+#include<map>
 
-struct PointHash {
-    std::size_t operator()(const Point& point) const {
-        return std::hash<int>()(point.x) ^ std::hash<int>()(point.y) ^ std::hash<int>()(point.z);
-    }
-};
+
+using namespace std;
 
 VoxMap::VoxMap(std::istream& stream) {
-    parseMap(stream);
+    stream >> width >> depth >> height;
+    map = vector<vector<vector<bool>>>(height, vector<vector<bool>>(depth, vector<bool>(width, false)));
+
+    string tier;
+    string binary;
+    binary.reserve(width);  // Reserve memory for the binary string to avoid repeated allocations
+
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < depth; ++j) {
+            getline(stream, tier);
+            if (tier.empty()) {
+                --j;  // Adjust for skipped empty line
+                continue;
+            }
+            binary = conversion(tier);
+            for (int k = 0; k < width; ++k) {
+                map[i][j][k] = (binary[k] == '1');
+            }
+        }
+    }
 }
+// VoxMap::VoxMap(std::istream& stream) {
+//   stream >> width >> depth >> height;
+//   map = vector<vector<vector<bool>>>(height, vector<vector<bool>>(depth, vector<bool>(width, false)));
+
+//   string tier;
+//   // string binary = "";
+//   // i =z
+//   // j = y 
+//   // k = x
+//   for(int i = 0; i < height; i++) {
+//     for(int j = 0; j < depth; j++) {
+//       getline(stream, tier);
+//       if(tier == "") {
+//         j--;
+//         continue;
+//       }
+//       string binary = conversion(tier);
+//       for(int k = 0; k < width; k++) {
+//         if(binary[k] == '1') {
+//           map[i][j][k] = true;  
+//         }
+//       }
+     
+//     }  // cout << "--------------" << endl;
+//   }
+
+  
+// }
+
+
+
+std::vector<Point> VoxMap::neighbors(const Point& pt) {
+  std::vector<Point> nbs;
+  std::vector<Point> directions = {
+      {pt.x + 1, pt.y, pt.z},
+      {pt.x - 1, pt.y, pt.z},
+      {pt.x, pt.y + 1, pt.z},
+      {pt.x, pt.y - 1, pt.z}
+  };
+
+  for(auto neighbor : directions) {
+    if (!validBox(neighbor)) {
+      continue;
+    }
+
+    if(neighbor.z > 0 && map[neighbor.z - 1][neighbor.y][neighbor.x] == false 
+      && map[neighbor.z][neighbor.y][neighbor.x] == false) {
+      while (neighbor.z > 0 && !map[neighbor.z - 1][neighbor.y][neighbor.x]) {
+        neighbor.z--;
+      }
+    }
+
+
+    if (Validity(neighbor)) {
+      nbs.push_back(neighbor);
+      continue;
+    }
+
+    if(neighbor.z > 0 && map[neighbor.z][neighbor.y][neighbor.x]) {
+      neighbor.z++;
+      if(neighbor.z < height && !map[neighbor.z][neighbor.y][neighbor.x] && !map[pt.z+1][pt.y][pt.x]) {
+        nbs.push_back(neighbor);
+        continue;
+      }
+    } 
+
+  }
+
+  return nbs;
+
+}
+
+
 
 VoxMap::~VoxMap() {
-    // No dynamic memory to clean up
 }
 
-void VoxMap::parseMap(std::istream& stream) {
-    stream >> width >> depth >> height;
-    if (stream.fail() || width <= 0 || depth <= 0 || height <= 0) {
-        throw std::invalid_argument("Invalid map dimensions");
-    }
-
-    map.resize(height, std::vector<std::vector<bool>>(depth, std::vector<bool>(width, false)));
-
-    std::string line;
-    std::getline(stream, line); // Skip the newline character after dimensions
-
-    for (int z = 0; z < height; ++z) {
-        if (!std::getline(stream, line)) {
-            throw std::invalid_argument("Unexpected end of file while reading map data (missing empty line)");
-        }
-        if (!line.empty()) {
-            throw std::invalid_argument("Expected empty line between tiers, found: " + line);
-        }
-
-        for (int y = 0; y < depth; ++y) {
-            if (!std::getline(stream, line)) {
-                throw std::invalid_argument("Unexpected end of file while reading map data");
-            }
-
-            if (line.length() != static_cast<size_t>(width / 4)) {
-                std::ostringstream oss;
-                oss << "Invalid line length in map file: expected " << (width / 4) << " but found " << line.length();
-                throw std::invalid_argument(oss.str());
-            }
-
-            for (int x = 0; x < width / 4; ++x) {
-                char hexDigit = line[x];
-                if (!std::isxdigit(hexDigit)) {
-                    throw std::invalid_argument("Invalid character in map file: " + std::string(1, hexDigit));
-                }
-                int value = std::stoi(std::string(1, hexDigit), nullptr, 16);
-                std::bitset<4> bits(value);
-                for (int bit = 0; bit < 4; ++bit) {
-                    map[z][y][x * 4 + bit] = bits[3 - bit]; // High bit is westmost
-                }
-            }
-        }
-    }
-}
-
-bool VoxMap::isFilled(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return true; // Out of bounds is considered filled
-    }
-    return map[z][y][x];
-}
-
-bool VoxMap::isValidVoxel(int x, int y, int z) const {
-    if (x < 0 || x >= width || y < 0 || y >= depth || z < 0 || z >= height) {
-        return false; // Ensure within bounds
-    }
-    return !isFilled(x, y, z) && (z == 0 || isFilled(x, y, z - 1)); // Check for filled voxel below
-}
-
-std::vector<Point> VoxMap::getNeighbors(const Point& pt) const {
-    std::vector<Point> neighbors;
-    std::vector<Point> directions = {
-        {pt.x + 1, pt.y, pt.z},
-        {pt.x - 1, pt.y, pt.z},
-        {pt.x, pt.y + 1, pt.z},
-        {pt.x, pt.y - 1, pt.z}
-    };
-
-    // Add valid horizontal neighbors
-    for (const auto& dir : directions) {
-        if (isValidVoxel(dir.x, dir.y, dir.z)) {
-            neighbors.push_back(dir);
-        }
-    }
-
-    // Check for downward movement
-    if (pt.z > 0 && !isFilled(pt.x, pt.y, pt.z - 1)) {
-        Point down = pt;
-        while (down.z > 0 && !isFilled(down.x, down.y, down.z - 1)) {
-            down.z--;
-        }
-        if (down != pt && isValidVoxel(down.x, down.y, down.z)) {
-            neighbors.push_back(down);
-        }
-    }
-
-    // Check for upward movement
-    if (pt.z < height - 1 && isValidVoxel(pt.x, pt.y, pt.z + 1) && !isFilled(pt.x, pt.y, pt.z + 1)) {
-        neighbors.push_back({pt.x, pt.y, pt.z + 1});
-    }
-
-    return neighbors;
-}
-
-int VoxMap::heuristic(const Point& a, const Point& b) const {
-    return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
-}
 
 Route VoxMap::route(Point src, Point dst) {
-    if (!isValidVoxel(src.x, src.y, src.z)) {
-        throw InvalidPoint(src);
+  Route r;
+  if(!val(src)) {
+    throw InvalidPoint(src);
+  }
+  if(!val(dst)) {
+    throw InvalidPoint(dst);
+  }
+
+  // vector<Point> s = neighbors(src);
+  // for(size_t i = 0; i < s.size(); i++) {
+  //   cout << s[i] << " ";
+  // }
+  // cout << endl;
+
+  // try {
+        // Attempt to find the route using Astart 
+    // cout << "here before assignment" << endl;
+    r = Astart(src, dst);
+    // cout << "here" << endl;
+    if(r.empty()) {
+      // cout << "here" << endl;
+      throw NoRoute(src, dst);
     }
-    if (!isValidVoxel(dst.x, dst.y, dst.z)) {
-        throw InvalidPoint(dst);
+    else {
+
+      // cout << "hree at reutnr " << endl;
+      return r;   
     }
+        
+    
+    // } 
+    // catch (const NoRoute&) {
+        // If Astart throws a NoRoute exception, rethrow it again 
+      // throw NoRoute(src, dst);
+    // }
 
-    std::priority_queue<std::pair<int, Point>, std::vector<std::pair<int, Point>>, std::greater<>> frontier;
-    frontier.emplace(0, src);
+    // throw NoRoute(src, dst);
+}
 
-    std::unordered_map<Point, Point, PointHash> cameFrom;
-    std::unordered_map<Point, int, PointHash> costSoFar;
-    cameFrom[src] = src;
-    costSoFar[src] = 0;
+// scratcehd idea, too slow to pass the tests apparently 
+// void VoxMap::BFS(const std::vector<std::vector<std::vector<bool>>>& map, const Point& src, const Point& dst) {
+  
+// }
 
-    while (!frontier.empty()) {
-        Point current = frontier.top().second;
-        frontier.pop();
+Route VoxMap::Astart(const Point& src, const Point& dst) {
+  std::unordered_set<Point, PointHash> cSet; // Closed set, already visited blocks | runtime: unordered > ordered 
+  std::unordered_map<Point, Point, PointHash> mapPath; // Where it came from | runtime: unordered> ordered
+  std::unordered_map<Point, double, PointHash> g, f; // Cost from start to block and total cost (g + heuristic) | runtieme: unorfdered > ordred 
+  
+  cSet.reserve(width * depth * height);
+  mapPath.reserve(width * depth * height);
+  g.reserve(width * depth * height);
+  f.reserve(width * depth * height);
+  
+  Comparison comp(f);
+  std::priority_queue<Point, std::vector<Point>, Comparison> oSet(comp); // the oopen set, blocks that need to be eval. | neeededs queeue []
+  bool pathfound = false;
+  Route path;
+  // start at 0 and calc f with h func
 
-        if (current == dst) {
-            Route path;
-            Point step = current;
-            while (step != src) {
-                Point prev = cameFrom[step];
+   
+  g[src] = 0;
+  f[src] = h(src, dst);
+// the h function also calculates the z coords bu ti dont think its necessary so take it out if it stil wokrs fine
+  // cout << "here ins/tide" << endl;
+   oSet.push(src);
 
-                if (!isValidVoxel(step.x, step.y, step.z)) {
-                    throw NoRoute(src, dst);
-                }
+  while(!oSet.empty()) {
+    // cout << "inside hwile" << endl;
+    Point currPoint = oSet.top();
+    oSet.pop();
 
-                if (prev.x < step.x) path.push_back(Move::EAST);
-                else if (prev.x > step.x) path.push_back(Move::WEST);
-                else if (prev.y < step.y) path.push_back(Move::SOUTH);
-                else if (prev.y > step.y) path.push_back(Move::NORTH);
-                else if (prev.z < step.z) path.push_back(Move::UP);
-                else if (prev.z > step.z) path.push_back(Move::DOWN);
-                step = prev;
-            }
-            std::reverse(path.begin(), path.end());
-            return path;
+    if(currPoint == dst) {
+      // cout << "here inside found dst" << endl;
+      pathfound = true;
+
+      while(currPoint != src) {
+        //  cout << " insdie currP != src" << endl;
+        // void findpath(mapPath[currPoint]);
+        Point prev = mapPath[currPoint];
+
+        if (prev.x < currPoint.x) {
+          path.push_back(EAST);
         }
-
-        for (const Point& next : getNeighbors(current)) {
-            int newCost = costSoFar[current] + 1;
-            if (costSoFar.find(next) == costSoFar.end() || newCost < costSoFar[next]) {
-                costSoFar[next] = newCost;
-                int priority = newCost + heuristic(next, dst);
-                frontier.emplace(priority, next);
-                cameFrom[next] = current;
-            }
+        else if (prev.x > currPoint.x) {
+          path.push_back(WEST);
         }
+        else if (prev.y < currPoint.y) {
+          path.push_back(SOUTH);
+        }
+        else if (prev.y > currPoint.y) {
+          path.push_back(NORTH);
+        }
+        currPoint = prev;
+      }
+
+      // TBA break for now;
+      // path was found 
+      break;
     }
 
+    cSet.insert(currPoint);
+
+    for(const auto& n : neighbors(currPoint)) {
+
+      if(cSet.find(n) != cSet.end()) {
+        continue;
+      }
+      // cout << "after" << endl;
+
+      double gT = g[currPoint] + 1;
+      if(!g.count(n) || gT < g[n]) {
+        // cout << "here inside that if state ement \n";
+        mapPath[n] = currPoint;
+        g[n] = gT;
+        f[n] = gT + h(n, dst);
+        oSet.push(n);
+      }
+      // cout << "after second if statment " << endl;
+    }
+  }
+
+  if(pathfound == false) {
     throw NoRoute(src, dst);
+  }
+  else {
+    reverse(path.begin(), path.end());
+    return path;
+  }
+
+}
+
+
+
+
+
+double VoxMap::h(const Point& src, const Point& dst) {
+  // returnt the f of f = h + g but 
+  // double value;
+  // value = abs(src.x - dst.x) + abs(src.y - dst.y);
+  return abs(src.x - dst.x) + abs(src.y - dst.y);
+
+  // return value;
+}
+
+
+
+
+
+
+
+// checks if the point is a valid point within the map created
+
+bool VoxMap::Validity(const Point& point) {
+  // bool check = true;
+  if(point.x < 0 || point.x >= width || point.y < 0 || point.y >= depth || point.z <= 0 || point.z >= height) {
+    // cout << "here1" << endl;
+    return false;
+  }
+  if(map[point.z][point.y][point.x]) {
+    // cout << "here2" << endl;
+    return false;
+  }
+  // if(map[point.z][point.y][point.x] == false && map[point.z-1][point.y][point.x] == false) {
+  //   // cout << "here2" << endl;
+  //   return false;
+  // }
+  // if (point.z == 0 || !map[point.z -1][point.y][point.x]) {
+  //   return false;
+  // }
+  return true;
+}
+
+
+bool VoxMap::val(const Point& point) {
+  // bool check = true;
+  if(point.x < 0 || point.x >= width || point.y < 0 || point.y >= depth || point.z <= 0 || point.z >= height) {
+    // cout << "here1" << endl;
+    return false;
+  }
+  if(map[point.z][point.y][point.x]) {
+    // cout << "here2" << endl;
+    return false;
+  }
+  if(map[point.z][point.y][point.x] == false && map[point.z-1][point.y][point.x] == false) {
+    // cout << "here2" << endl;
+    return false;
+  }
+  // if (point.z == 0 || !map[point.z -1][point.y][point.x]) {
+  //   return false;
+  // }
+  return true;
+}
+
+
+
+// valid box within map (can be true | falsw)
+bool VoxMap::validBox(const Point& point) {
+  if (point.x < 0 || point.x >= width || point.y < 0 || point.y >= depth || point.z <= 0 || point.z >= height) {
+    return false;
+  }
+  return true;
+}
+
+
+
+
+// std::string VoxMap::conversion(const std::string& str) {
+//     static const std::unordered_map<char, std::string> dict = {
+//       {'0', "0000"}, {'1', "0001"}, {'2', "0010"}, {'3', "0011"},
+//       {'4', "0100"}, {'5', "0101"}, {'6', "0110"}, {'7', "0111"},
+//       {'8', "1000"}, {'9', "1001"}, {'a', "1010"}, {'b', "1011"},
+//       {'c', "1100"}, {'d', "1101"}, {'e', "1110"}, {'f', "1111"},
+//       {'A', "1010"}, {'B', "1011"}, {'C', "1100"}, {'D', "1101"},
+//       {'E', "1110"}, {'F', "1111"}
+//     };
+    
+//     std::string binaryStr;
+//     binaryStr.reserve(str.size() * 4); // Reserve memory to avoid multiple allocations
+
+//     for (char ch : str) {
+//       binaryStr.append(dict.at(ch));
+//     }
+    
+//     return binaryStr;
+// }
+
+
+
+
+// // converts from hex to binary
+std::string VoxMap::conversion(const std::string& str) {
+  std::string binaryStr = "";
+  for (size_t i = 0; i < str.size(); ++i) {
+    switch (str[i]) {
+      case '0': 
+        binaryStr.append("0000"); 
+        break;
+      case '1': 
+        binaryStr.append("0001"); 
+        break;
+      case '2': 
+        binaryStr.append("0010"); 
+        break;
+      case '3': 
+        binaryStr.append("0011"); 
+        break;
+      case '4': 
+        binaryStr.append("0100"); 
+        break;
+      case '5': 
+        binaryStr.append("0101"); 
+        break;
+      case '6': 
+        binaryStr.append("0110"); 
+        break;
+      case '7': 
+        binaryStr.append("0111"); 
+        break;
+      case '8': 
+        binaryStr.append("1000"); 
+        break;
+      case '9': 
+        binaryStr.append("1001"); 
+        break;
+      case 'a':   
+        binaryStr.append("1010"); 
+        break;
+      case 'b': 
+        binaryStr.append("1011"); 
+        break;
+      case 'c': 
+        binaryStr.append("1100"); 
+        break;
+      case 'd': 
+        binaryStr.append("1101"); 
+        break;
+      case 'e': 
+        binaryStr.append("1110"); 
+        break;
+      case 'f': 
+        binaryStr.append("1111"); 
+        break;
+    }
+  }
+  return binaryStr;
 }
